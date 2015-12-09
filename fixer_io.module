@@ -1,0 +1,151 @@
+<?php
+/**
+ * @file
+ * A description of what your module does.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function fixer_io_menu() {
+
+  $items['admin/config/regional/fixer_io'] = array(
+    'title' => t('fixer.io Currency Switcher'),
+    'description' => t('Choose a base currency.'),
+    'weight' => 100,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fixer_io_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'fixer_io.admin.inc'
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function fixer_io_cron() {
+
+  _fixer_io_reload();
+}
+
+/**
+ * Implements hook_boot().
+ */
+function fixer_io_boot() {
+  if (!isset($_COOKIE['fixer_io'])) {
+    $_COOKIE['fixer_io'] = variable_get('fixer_io_base');
+  }
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function fixer_io_field_formatter_info() {
+
+  $info = array(
+    'fixer_io' => array(
+      'label' => t('fixer.io Currency Switcher'),
+      'description' => t('Displays value with currency switcher.'),
+      'field types' => array('number_decimal'),
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+
+  $element = array(); // Initialize the var
+  $settings = $display['settings']; // get the settings
+
+  switch ($display['type']) {
+    case 'fixer_io':
+
+      foreach ($items as $delta => $item) {
+
+        $value = $item['value'];
+        $switcher_form = drupal_get_form('fixer_io_switcher', $value);
+
+        $element[$delta] = array(
+          '#markup' => render($switcher_form),
+        );
+      }
+      break;
+  }
+  return $element;
+}
+
+/**
+ * Currency switcher form handler.
+ */
+function fixer_io_switcher($form, &$form_state, $value) {
+
+  $fixer_io_options = variable_get('fixer_io_options', array(
+    'EUR',
+    'USD',
+    'GBP'
+  ));
+  $switchable_currencies = array();
+  foreach ($fixer_io_options as $key => $iso) {
+    if ($iso != '0') {
+      $switchable_currencies[$key] = $iso;
+    }
+  }
+
+  $default_iso_code = variable_get('fixer_io_base', 'EUR');
+
+  $form['fixer_io_value'] = array(
+    '#prefix' => '<div id="fixer-io" class="form-item fixer-io-inline">',
+    '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_calculate($value, $form_state['values']['fixer_io_switcher']) : $value) : $value),
+    '#suffix' => '</div>',
+  );
+  $form['fixer_io_switcher'] = array(
+    '#prefix' => '<div class="form-item fixer-io-inline">',
+    '#type' => 'select',
+    '#options' => drupal_map_assoc($switchable_currencies),
+    '#default_value' => $default_iso_code,
+    '#ajax' => array(
+      'callback' => 'fixer_io_switcher_ajax_callback',
+      'wrapper' => 'fixer-io', // CHECK THIS ID
+    ),
+    '#suffix' => '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Callback for both ajax-enabled buttons.
+ *
+ * Selects and returns the fieldset with the names in it.
+ */
+function fixer_io_switcher_ajax_callback($form, $form_state) {
+  return $form['fixer_io_value'];
+}
+
+/**
+ * @param $value
+ * @param $iso_code
+ * @return mixed
+ */
+function _fixer_io_calculate($value, $iso_code) {
+
+  $obj = variable_get('fixer_io_rates');
+  return number_format($obj->rates->$iso_code * $value, 2, '.', '');
+}
+
+/**
+ *
+ */
+function _fixer_io_reload() {
+
+  // Get current rates from fixer.io
+  if ($json = file_get_contents('http://api.fixer.io/latest?base=' . variable_get('fixer_io_base', 'EUR'))) {
+    $obj = json_decode($json);
+    variable_set('fixer_io_rates', $obj);
+  }
+}

@@ -1,0 +1,6 @@
+.fixer-io-inline {
+  display: inline-block;
+}
+.fixer-io-inline:first-child {
+  margin-right: 25px;
+}

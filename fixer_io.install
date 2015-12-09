@@ -1,0 +1,23 @@
+<?php
+/**
+ * @file
+ * A description of what your module does.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function fixer_io_install() {
+
+  _fixer_io_reload();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function fixer_io_uninstall() {
+
+  variable_del('fixer_io_rates');
+  variable_del('fixer_io_base');
+  variable_del('fixer_io_options');
+}
