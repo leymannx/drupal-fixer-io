@@ -30,15 +30,6 @@ function fixer_io_cron() {
 }
 
 /**
- * Implements hook_boot().
- */
-function fixer_io_boot() {
-  if (!isset($_COOKIE['fixer_io'])) {
-    $_COOKIE['fixer_io'] = variable_get('fixer_io_base');
-  }
-}
-
-/**
  * Implements hook_field_formatter_info().
  */
 function fixer_io_field_formatter_info() {
