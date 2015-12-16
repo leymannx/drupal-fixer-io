@@ -140,3 +140,31 @@ function _fixer_io_reload() {
     variable_set('fixer_io_rates', $obj);
   }
 }
+
+/**
+ * Implements hook_libraries_info().
+ */
+function fixer_io_libraries_info() {
+
+  $libraries = array();
+  $libraries['accountingjs'] = array(
+    'name' => 'accounting.js',
+    'vendor url' => 'https://openexchangerates.org/',
+    'download url' => 'http://openexchangerates.github.io/accounting.js/',
+    'version callback' => 'simple_version_callback',
+    'files' => array(
+      'js' => array('accounting.min.js'),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Short-circuit the version argument.
+ */
+function simple_version_callback() {
+
+  //use some fancy magic to get the version number... or don't
+  return TRUE;
+}
