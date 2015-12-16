@@ -1,6 +1,4 @@
-.fixer-io-inline {
+.fixer-io.select {
   display: inline-block;
-}
-.fixer-io-inline:first-child {
-  margin-right: 25px;
+  margin-left: 25px;
 }
