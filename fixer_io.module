@@ -6,6 +6,9 @@
 
 /**
  * Implements hook_menu().
+ *
+ *   Adds a setting page for this module, where admins can choose
+ *   a base currency and one or more switchable currencies.
  */
 function fixer_io_menu() {
 
@@ -24,6 +27,8 @@ function fixer_io_menu() {
 
 /**
  * Implements hook_cron().
+ *
+ *   Updates exchange rates on cron run.
  */
 function fixer_io_cron() {
 
@@ -32,12 +37,14 @@ function fixer_io_cron() {
 
 /**
  * Implements hook_field_formatter_info().
+ *
+ *   Provides the new field formatter for decimal number fields.
  */
 function fixer_io_field_formatter_info() {
 
   $info = array(
     'fixer_io' => array(
-      'label' => t('fixer.io Currency Switcher'),
+      'label' => t('fixer.io currency switcher'),
       'description' => t('Displays value with currency switcher.'),
       'field types' => array('number_decimal'),
     ),
@@ -48,6 +55,7 @@ function fixer_io_field_formatter_info() {
 
 /**
  * Implements hook_field_formatter_view().
+ *   Outputs the currency switcher form.
  */
 function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
 
@@ -74,9 +82,12 @@ function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance,
 
 /**
  * Currency switcher form handler.
+ *
+ *   Returns the actual switcher form.
  */
 function fixer_io_switcher($form, &$form_state, $value) {
 
+  $symbol_position = variable_get('fixer_io_symbol_position', 'before');
   $default_iso_code = variable_get('fixer_io_base', 'EUR');
   $fixer_io_options = variable_get('fixer_io_options', array(
     'EUR',
@@ -91,30 +102,48 @@ function fixer_io_switcher($form, &$form_state, $value) {
     }
   }
 
-  $id = drupal_html_id('fixer-io');
-
+  // Ensures unique HTML IDs ...
+  $id = drupal_html_id('fixer-io-container');
+  // ... which will get renewed on every AJAX callback.
   $form['fixer_io_container'] = array(
-    '#prefix' => '<div id="' . $id . '">',
+    '#prefix' => '<div id="' . $id . '">', // THIS ID.
     '#type' => 'container',
     '#suffix' => '</div>'
   );
+
+  if ($symbol_position == 'before') {
+    $form['fixer_io_container']['fixer_io_symbol_before'] = array(
+      '#prefix' => '<span class="form-item fixer-io symbol">',
+      '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_symbol($form_state['values']['fixer_io_switcher']) : _fixer_io_symbol($default_iso_code)) : _fixer_io_symbol($default_iso_code)),
+      '#suffix' => '</span>',
+    );
+  }
+
   $form['fixer_io_container']['fixer_io_value'] = array(
-    '#prefix' => '<div class="form-item fixer-io-inline">',
+    '#prefix' => '<span class="form-item fixer-io value">',
     '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_calculate($value, $form_state['values']['fixer_io_switcher']) : $value) : $value),
-    '#suffix' => '</div>',
+    '#suffix' => '</span>',
   );
+
+  if ($symbol_position == 'after') {
+    $form['fixer_io_container']['fixer_io_symbol_after'] = array(
+      '#prefix' => '<span class="form-item fixer-io symbol">',
+      '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_symbol($form_state['values']['fixer_io_switcher']) : _fixer_io_symbol($default_iso_code)) : _fixer_io_symbol($default_iso_code)),
+      '#suffix' => '</span>',
+    );
+  }
+
   $form['fixer_io_container']['fixer_io_switcher'] = array(
-    '#prefix' => '<div class="form-item fixer-io-inline">',
+    '#prefix' => '<div class="form-item fixer-io-inline fixer-io select">',
     '#type' => 'select',
     '#options' => drupal_map_assoc($options),
     '#default_value' => $default_iso_code,
     '#ajax' => array(
       'callback' => 'fixer_io_switcher_ajax_callback',
-      'wrapper' => $id, // CHECK THIS ID
+      'wrapper' => $id, // AND THIS ID.
     ),
     '#suffix' => '</div>',
   );
-  $form['#attached']['libraries_load'][] = array('accountingjs');
 
   return $form;
 }
@@ -122,7 +151,7 @@ function fixer_io_switcher($form, &$form_state, $value) {
 /**
  * Callback for both ajax-enabled buttons.
  *
- * Selects and returns the fieldset with the names in it.
+ *   Returns the whole fixer.io container after the switcher got changed.
  */
 function fixer_io_switcher_ajax_callback($form, $form_state) {
 
@@ -130,9 +159,12 @@ function fixer_io_switcher_ajax_callback($form, $form_state) {
 }
 
 /**
- * @param $value
- * @param $iso_code
- * @return mixed
+ * Helper function
+ *   which calculates one currency value into another currency.
+ *
+ * @param $value number.
+ * @param $iso_code three-letters currency ISO code.
+ * @return calculated number.
  */
 function _fixer_io_calculate($value, $iso_code) {
 
@@ -142,7 +174,9 @@ function _fixer_io_calculate($value, $iso_code) {
 }
 
 /**
- *
+ * Helper function
+ *   which pulls current exchange rates from fixer.io and
+ *   stores them in the database.
  */
 function _fixer_io_reload() {
 
