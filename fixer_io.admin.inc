@@ -50,22 +50,14 @@ function fixer_io_settings() {
     '#options' => drupal_map_assoc($iso_codes),
     '#default_value' => variable_get('fixer_io_base', 'EUR'),
   );
+
   $form['fixer_io_options'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Choose switchable currencies.'),
     '#options' => drupal_map_assoc($iso_codes),
     '#default_value' => variable_get('fixer_io_options', array('EUR', 'USD', 'GBP')),
   );
-  $form['fixer_io_symbol_position'] = array(
-    '#type' => 'radios',
-    '#title' => t('Choose currency symbol positioning.'),
-    '#options' => array(
-      'none' => t('- None -'),
-      'before' => t('Before number value'),
-      'after' => t('After number value'),
-    ),
-    '#default_value' => variable_get('fixer_io_symbol_position', 'before'),
-  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
@@ -81,6 +73,5 @@ function fixer_io_settings_submit($form, &$form_state) {
 
   variable_set('fixer_io_base', $form_state['values']['fixer_io_base']);
   variable_set('fixer_io_options', $form_state['values']['fixer_io_options']);
-  variable_set('fixer_io_symbol_position', $form_state['values']['fixer_io_symbol_position']);
   _fixer_io_reload();
 }

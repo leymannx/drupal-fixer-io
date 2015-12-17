@@ -47,10 +47,104 @@ function fixer_io_field_formatter_info() {
       'label' => t('fixer.io currency switcher'),
       'description' => t('Displays value with currency switcher.'),
       'field types' => array('number_decimal'),
+      'settings' =>  array(
+        'currency_symbol' => 'symbol_before',
+        'thousand_separator' => '',
+        'decimal_separator' => '.',
+        'scale' => 2,
+      ),
     ),
   );
 
   return $info;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $element = array();
+  $element['currency_symbol'] = array(
+    '#type'           => 'select',
+    '#title'          => t('Currency symbol position'),
+    '#default_value'  => $settings['currency_symbol'],
+    '#options'        => array(
+      'none' => t('- None -'),
+      'symbol_before' => t('Symbol before number value'),
+      'symbol_after' => t('Symbol after number value'),
+      'iso_before' => t('ISO code before number value'),
+      'iso_after' => t('ISO code after number value'),
+    ),
+  );
+
+  $element['thousand_separator'] = array(
+    '#type' => 'select',
+    '#title' => t('Thousand marker'),
+    '#default_value' => $settings['thousand_separator'],
+    '#options' => array(
+      ''  => t('<none>'),
+      '.' => t('Decimal point'),
+      ',' => t('Comma'),
+      ' ' => t('Space'),
+    ),
+  );
+
+  $element['decimal_separator'] = array(
+    '#type' => 'select',
+    '#title' => t('Decimal marker'),
+    '#default_value' => $settings['decimal_separator'],
+    '#options' => array(
+      '.' => t('Decimal point'),
+      ',' => t('Comma')),
+  );
+
+  $element['scale'] = array(
+    '#type' => 'select',
+    '#title' => t('Scale'),
+    '#description' => t('The number of digits to the right of the decimal.'),
+    '#options' => drupal_map_assoc(range(0, 10)),
+    '#default_value' => $settings['scale'],
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function fixer_io_field_formatter_settings_summary($field, $instance, $view_mode) {
+
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $fixer_base = variable_get('fixer_io_base', 'EUR');
+  $fixer_base_symbol = _fixer_io_symbol($fixer_base);
+  $fixer_prefix = '';
+  $fixer_suffix = '';
+
+  switch ($settings['currency_symbol']) {
+    case 'symbol_before':
+      $fixer_prefix = $fixer_base_symbol . ' ';
+      break;
+    case 'symbol_after':
+      $fixer_suffix = ' ' . $fixer_base_symbol;
+      break;
+    case 'iso_before':
+      $fixer_prefix = $fixer_base . ' ';
+      break;
+    case 'iso_after':
+      $fixer_suffix = ' ' . $fixer_base;
+      break;
+  }
+
+  $summary = array();
+  $summary[] = $fixer_prefix . number_format(1234.1234567890, $settings['scale'], $settings['decimal_separator'], $settings['thousand_separator']) . $fixer_suffix;
+
+  return implode($summary);
 }
 
 /**
@@ -68,10 +162,10 @@ function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance,
       foreach ($items as $delta => $item) {
 
         $value = $item['value'];
-        $switcher_form = drupal_get_form('fixer_io_switcher', $value);
+        $form = drupal_get_form('fixer_io_switcher', $value, $settings);
 
         $element[$delta] = array(
-          '#markup' => render($switcher_form),
+          '#markup' => render($form),
         );
       }
       break;
@@ -85,10 +179,10 @@ function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance,
  *
  *   Returns the actual switcher form.
  */
-function fixer_io_switcher($form, &$form_state, $value) {
+function fixer_io_switcher($form, &$form_state, $value, $settings) {
 
-  $symbol_position = variable_get('fixer_io_symbol_position', 'before');
   $default_iso_code = variable_get('fixer_io_base', 'EUR');
+  $default_symbol = _fixer_io_symbol($default_iso_code);
   $fixer_io_options = variable_get('fixer_io_options', array(
     'EUR',
     'USD',
@@ -111,27 +205,32 @@ function fixer_io_switcher($form, &$form_state, $value) {
     '#suffix' => '</div>'
   );
 
-  if ($symbol_position == 'before') {
-    $form['fixer_io_container']['fixer_io_symbol_before'] = array(
-      '#prefix' => '<span class="form-item fixer-io symbol">',
-      '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_symbol($form_state['values']['fixer_io_switcher']) : _fixer_io_symbol($default_iso_code)) : _fixer_io_symbol($default_iso_code)),
-      '#suffix' => '</span>',
-    );
+  $prefix = '';
+  $suffix = '';
+
+  switch ($settings['currency_symbol']) {
+    case 'symbol_before':
+      $prefix = $default_symbol . ' ';
+      break;
+    case 'symbol_after':
+      $suffix = ' ' . $default_symbol;
+      break;
+    case 'iso_before':
+      $prefix = $default_iso_code . ' ';
+      break;
+    case 'iso_after':
+      $suffix = ' ' . $default_iso_code;
+      break;
   }
+
+  $number = (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_calculate($value, $form_state['values']['fixer_io_switcher']) : $value) : $value);
+  $formatted_number = number_format($number, $settings['scale'], $settings['decimal_separator'], $settings['thousand_separator']);
 
   $form['fixer_io_container']['fixer_io_value'] = array(
     '#prefix' => '<span class="form-item fixer-io value">',
-    '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_calculate($value, $form_state['values']['fixer_io_switcher']) : $value) : $value),
+    '#markup' => $prefix . $formatted_number . $suffix,
     '#suffix' => '</span>',
   );
-
-  if ($symbol_position == 'after') {
-    $form['fixer_io_container']['fixer_io_symbol_after'] = array(
-      '#prefix' => '<span class="form-item fixer-io symbol">',
-      '#markup' => (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_symbol($form_state['values']['fixer_io_switcher']) : _fixer_io_symbol($default_iso_code)) : _fixer_io_symbol($default_iso_code)),
-      '#suffix' => '</span>',
-    );
-  }
 
   $form['fixer_io_container']['fixer_io_switcher'] = array(
     '#prefix' => '<div class="form-item fixer-io-inline fixer-io select">',
