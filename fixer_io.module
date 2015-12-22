@@ -47,7 +47,7 @@ function fixer_io_field_formatter_info() {
       'label' => t('fixer.io currency switcher'),
       'description' => t('Displays value with currency switcher.'),
       'field types' => array('number_decimal'),
-      'settings' =>  array(
+      'settings' => array(
         'currency_symbol' => 'symbol_before',
         'thousand_separator' => '',
         'decimal_separator' => '.',
@@ -69,10 +69,10 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
 
   $element = array();
   $element['currency_symbol'] = array(
-    '#type'           => 'select',
-    '#title'          => t('Currency symbol position'),
-    '#default_value'  => $settings['currency_symbol'],
-    '#options'        => array(
+    '#type' => 'select',
+    '#title' => t('Currency symbol position'),
+    '#default_value' => $settings['currency_symbol'],
+    '#options' => array(
       'none' => t('- None -'),
       'symbol_before' => t('Symbol before number value'),
       'symbol_after' => t('Symbol after number value'),
@@ -86,7 +86,7 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
     '#title' => t('Thousand marker'),
     '#default_value' => $settings['thousand_separator'],
     '#options' => array(
-      ''  => t('<none>'),
+      '' => t('<none>'),
       '.' => t('Decimal point'),
       ',' => t('Comma'),
       ' ' => t('Space'),
@@ -99,7 +99,8 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
     '#default_value' => $settings['decimal_separator'],
     '#options' => array(
       '.' => t('Decimal point'),
-      ',' => t('Comma')),
+      ',' => t('Comma')
+    ),
   );
 
   $element['scale'] = array(
@@ -121,30 +122,9 @@ function fixer_io_field_formatter_settings_summary($field, $instance, $view_mode
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
 
-  $fixer_base = variable_get('fixer_io_base', 'EUR');
-  $fixer_base_symbol = _fixer_io_symbol($fixer_base);
-  $fixer_prefix = '';
-  $fixer_suffix = '';
+  $summary = _fixer_io_number_format(1234.1234567890, $settings);
 
-  switch ($settings['currency_symbol']) {
-    case 'symbol_before':
-      $fixer_prefix = $fixer_base_symbol . ' ';
-      break;
-    case 'symbol_after':
-      $fixer_suffix = ' ' . $fixer_base_symbol;
-      break;
-    case 'iso_before':
-      $fixer_prefix = $fixer_base . ' ';
-      break;
-    case 'iso_after':
-      $fixer_suffix = ' ' . $fixer_base;
-      break;
-  }
-
-  $summary = array();
-  $summary[] = $fixer_prefix . number_format(1234.1234567890, $settings['scale'], $settings['decimal_separator'], $settings['thousand_separator']) . $fixer_suffix;
-
-  return implode($summary);
+  return $summary;
 }
 
 /**
@@ -181,14 +161,16 @@ function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance,
  */
 function fixer_io_switcher($form, &$form_state, $value, $settings) {
 
-  $default_iso_code = variable_get('fixer_io_base', 'EUR');
-  $default_symbol = _fixer_io_symbol($default_iso_code);
+  global $language;
+
+  $fixer_io_default = variable_get('fixer_io_default', 'EUR');
+  $default_iso_code = is_array($fixer_io_default) ? $fixer_io_default[$language->language] : $fixer_io_default;
+  $base_iso_code = variable_get('fixer_io_base', 'EUR');
   $fixer_io_options = variable_get('fixer_io_options', array(
     'EUR',
     'USD',
     'GBP'
   ));
-
   $options = array();
   foreach ($fixer_io_options as $key => $iso) {
     if ($iso != '0') {
@@ -196,39 +178,30 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
     }
   }
 
-  // Ensures unique HTML IDs ...
+  $default_value = $value;
+  if ($default_iso_code != $base_iso_code) {
+    $default_value = _fixer_io_calculate($default_value, $default_iso_code);
+  }
+  if (!empty($form_state['values']['fixer_io_switcher'])) {
+    $number = _fixer_io_calculate($default_value, $form_state['values']['fixer_io_switcher']);
+    if ($form_state['values']['fixer_io_switcher'] == $base_iso_code) {
+      $number = $value;
+    }
+  }
+  else {
+    $number = $default_value;
+  }
+
   $id = drupal_html_id('fixer-io-container');
-  // ... which will get renewed on every AJAX callback.
   $form['fixer_io_container'] = array(
-    '#prefix' => '<div id="' . $id . '">', // THIS ID.
+    '#prefix' => '<div id="' . $id . '">',
     '#type' => 'container',
     '#suffix' => '</div>'
   );
 
-  $prefix = '';
-  $suffix = '';
-
-  switch ($settings['currency_symbol']) {
-    case 'symbol_before':
-      $prefix = $default_symbol . ' ';
-      break;
-    case 'symbol_after':
-      $suffix = ' ' . $default_symbol;
-      break;
-    case 'iso_before':
-      $prefix = $default_iso_code . ' ';
-      break;
-    case 'iso_after':
-      $suffix = ' ' . $default_iso_code;
-      break;
-  }
-
-  $number = (!empty($form_state['values']['fixer_io_switcher']) ? ($form_state['values']['fixer_io_switcher'] != $default_iso_code ? _fixer_io_calculate($value, $form_state['values']['fixer_io_switcher']) : $value) : $value);
-  $formatted_number = number_format($number, $settings['scale'], $settings['decimal_separator'], $settings['thousand_separator']);
-
   $form['fixer_io_container']['fixer_io_value'] = array(
     '#prefix' => '<span class="form-item fixer-io value">',
-    '#markup' => $prefix . $formatted_number . $suffix,
+    '#markup' => _fixer_io_number_format($number, $settings),
     '#suffix' => '</span>',
   );
 
@@ -239,7 +212,7 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
     '#default_value' => $default_iso_code,
     '#ajax' => array(
       'callback' => 'fixer_io_switcher_ajax_callback',
-      'wrapper' => $id, // AND THIS ID.
+      'wrapper' => $id,
     ),
     '#suffix' => '</div>',
   );
@@ -261,15 +234,50 @@ function fixer_io_switcher_ajax_callback($form, $form_state) {
  * Helper function
  *   which calculates one currency value into another currency.
  *
- * @param $value number.
- * @param $iso_code three-letters currency ISO code.
- * @return calculated number.
+ * @param $value number
+ * @param $iso_code string. Three-letters currency ISO code.
+ * @return number
  */
 function _fixer_io_calculate($value, $iso_code) {
 
   $obj = variable_get('fixer_io_rates');
 
-  return number_format($obj->rates->$iso_code * $value, 2, '.', '');
+  return $obj->rates->$iso_code * $value;
+}
+
+/**
+ * Helper function that returns formatted number with prefix/suffix.
+ *
+ * @param $number number
+ * @param $settings array
+ * @return string
+ */
+function _fixer_io_number_format($number, $settings) {
+
+  $fixer_base = variable_get('fixer_io_base', 'EUR');
+  $fixer_base_symbol = _fixer_io_symbol($fixer_base);
+
+  $prefix = '';
+  $suffix = '';
+
+  switch ($settings['currency_symbol']) {
+    case 'symbol_before':
+      $prefix = $fixer_base_symbol . ' ';
+      break;
+    case 'symbol_after':
+      $suffix = ' ' . $fixer_base_symbol;
+      break;
+    case 'iso_before':
+      $prefix = $fixer_base . ' ';
+      break;
+    case 'iso_after':
+      $suffix = ' ' . $fixer_base;
+      break;
+  }
+
+  $formatted_number = number_format($number, $settings['scale'], $settings['decimal_separator'], $settings['thousand_separator']);
+
+  return $prefix . $formatted_number . $suffix;
 }
 
 /**
@@ -291,8 +299,8 @@ function _fixer_io_reload() {
  *   which returns currency symbol from given ISO code.
  *   Array taken from @see https://gist.github.com/Gibbs/3920259
  *
- * @param $iso_code three-letters currency ISO code.
- * @return HTML currency symbol.
+ * @param $iso_code string. Three-letters currency ISO code.
+ * @return string. HTML code.
  */
 function _fixer_io_symbol($iso_code) {
 
