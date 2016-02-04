@@ -14,12 +14,36 @@ function fixer_io_menu() {
 
   $items['admin/config/regional/fixer_io'] = array(
     'title' => t('fixer.io Currency Switcher'),
-    'description' => t('Choose a base currency.'),
-    'weight' => 100,
+    'description' => t('Configure extended options for fixer.io.'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('fixer_io_settings'),
+    'page arguments' => array('fixer_io_base'),
     'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 100,
     'file' => 'fixer_io.admin.inc'
+  );
+  $items['admin/config/regional/fixer_io/base'] = array(
+    'title' => t('Base currency'),
+    'description' => t('Configure extended options for fixer.io.'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/config/regional/fixer_io/options'] = array(
+    'title' => t('Available currencies'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fixer_io_options'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'fixer_io.admin.inc',
+  );
+  $items['admin/config/regional/fixer_io/default'] = array(
+    'title' => t('Default currencies'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fixer_io_default'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+    'file' => 'fixer_io.admin.inc',
   );
 
   return $items;
@@ -166,17 +190,6 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
   $fixer_io_default = variable_get('fixer_io_default', 'EUR');
   $default_iso_code = is_array($fixer_io_default) ? $fixer_io_default[$language->language] : $fixer_io_default;
   $base_iso_code = variable_get('fixer_io_base', 'EUR');
-  $fixer_io_options = variable_get('fixer_io_options', array(
-    'EUR',
-    'USD',
-    'GBP'
-  ));
-  $options = array();
-  foreach ($fixer_io_options as $key => $iso) {
-    if ($iso != '0') {
-      $options[$key] = $iso;
-    }
-  }
 
   $default_value = $value;
   if ($default_iso_code != $base_iso_code) {
@@ -208,7 +221,7 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
   $form['fixer_io_container']['fixer_io_switcher'] = array(
     '#prefix' => '<div class="form-item fixer-io-inline fixer-io select">',
     '#type' => 'select',
-    '#options' => drupal_map_assoc($options),
+    '#options' => _fixer_io_activated_currencies(),
     '#default_value' => $default_iso_code,
     '#ajax' => array(
       'callback' => 'fixer_io_switcher_ajax_callback',
@@ -292,6 +305,24 @@ function _fixer_io_reload() {
     $obj = json_decode($json);
     variable_set('fixer_io_rates', $obj);
   }
+}
+
+/**
+ * Helper function to return all available currencies as
+ * three-letter ISO code strings.
+ *
+ * @return array
+ */
+function _fixer_io_activated_currencies() {
+
+  $items = drupal_map_assoc(variable_get('fixer_io_options', array(
+    'EUR',
+    'USD',
+    'GBP'
+  )));
+
+  $items = array_intersect(array_flip($items), $items);
+  return $items;
 }
 
 /**
