@@ -214,10 +214,9 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
 
   $form['fixer_io_container']['fixer_io_value'] = array(
     '#prefix' => '<span class="form-item fixer-io value">',
-    '#markup' => _fixer_io_number_format($number, $settings),
+    '#markup' => _fixer_io_number_format($number, $settings, $form_state),
     '#suffix' => '</span>',
   );
-
   $form['fixer_io_container']['fixer_io_switcher'] = array(
     '#prefix'        => '<div class="form-item fixer-io-inline fixer-io select">',
     '#type'          => 'select',
@@ -255,7 +254,7 @@ function _fixer_io_calculate($value, $iso_code) {
 
   $obj = variable_get('fixer_io_rates');
 
-  return $obj->rates->$iso_code * $value;
+  return $obj->rates->{$iso_code} * $value;
 }
 
 /**
@@ -265,26 +264,29 @@ function _fixer_io_calculate($value, $iso_code) {
  * @param $settings array
  * @return string
  */
-function _fixer_io_number_format($number, $settings) {
+function _fixer_io_number_format($number, $settings, $form_state) {
 
-  $fixer_base = variable_get('fixer_io_base', 'EUR');
-  $fixer_base_symbol = _fixer_io_symbol($fixer_base);
+  global $language;
+
+  $fixer_io_default = variable_get('fixer_io_default', 'EUR');
+  $default_iso_code = is_array($fixer_io_default) ? $fixer_io_default[$language->language] : $fixer_io_default;
+  $currency_symbol = isset($form_state['input']['fixer_io_switcher']) ? _fixer_io_symbol($form_state['input']['fixer_io_switcher']) : _fixer_io_symbol($default_iso_code);
 
   $prefix = '';
   $suffix = '';
 
   switch ($settings['currency_symbol']) {
     case 'symbol_before':
-      $prefix = $fixer_base_symbol . ' ';
+      $prefix = $currency_symbol . ' ';
       break;
     case 'symbol_after':
-      $suffix = ' ' . $fixer_base_symbol;
+      $suffix = ' ' . $currency_symbol;
       break;
     case 'iso_before':
-      $prefix = $fixer_base . ' ';
+      $prefix = $default_iso_code . ' ';
       break;
     case 'iso_after':
-      $suffix = ' ' . $fixer_base;
+      $suffix = ' ' . $default_iso_code;
       break;
   }
 
