@@ -13,37 +13,37 @@
 function fixer_io_menu() {
 
   $items['admin/config/regional/fixer_io'] = array(
-    'title' => t('fixer.io Currency Switcher'),
-    'description' => t('Configure extended options for fixer.io.'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('fixer_io_base'),
+    'title'            => t('fixer.io Currency Switcher'),
+    'description'      => t('Configure extended options for fixer.io.'),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('fixer_io_base'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_NORMAL_ITEM,
-    'weight' => 100,
-    'file' => 'fixer_io.admin.inc'
+    'type'             => MENU_NORMAL_ITEM,
+    'weight'           => 100,
+    'file'             => 'fixer_io.admin.inc',
   );
   $items['admin/config/regional/fixer_io/base'] = array(
-    'title' => t('Base currency'),
+    'title'       => t('Base currency'),
     'description' => t('Configure extended options for fixer.io.'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'type'        => MENU_DEFAULT_LOCAL_TASK,
   );
   $items['admin/config/regional/fixer_io/options'] = array(
-    'title' => t('Available currencies'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('fixer_io_options'),
+    'title'            => t('Available currencies'),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('fixer_io_options'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
-    'file' => 'fixer_io.admin.inc',
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 10,
+    'file'             => 'fixer_io.admin.inc',
   );
   $items['admin/config/regional/fixer_io/default'] = array(
-    'title' => t('Default currencies'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('fixer_io_default'),
+    'title'            => t('Default currencies'),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('fixer_io_default'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 20,
-    'file' => 'fixer_io.admin.inc',
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 20,
+    'file'             => 'fixer_io.admin.inc',
   );
 
   return $items;
@@ -68,14 +68,14 @@ function fixer_io_field_formatter_info() {
 
   $info = array(
     'fixer_io' => array(
-      'label' => t('fixer.io currency switcher'),
+      'label'       => t('fixer.io currency switcher'),
       'description' => t('Displays value with currency switcher.'),
       'field types' => array('number_decimal'),
-      'settings' => array(
-        'currency_symbol' => 'symbol_before',
+      'settings'    => array(
+        'currency_symbol'    => 'symbol_before',
         'thousand_separator' => '',
-        'decimal_separator' => '.',
-        'scale' => 2,
+        'decimal_separator'  => '.',
+        'scale'              => 2,
       ),
     ),
   );
@@ -93,24 +93,24 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
 
   $element = array();
   $element['currency_symbol'] = array(
-    '#type' => 'select',
-    '#title' => t('Currency symbol position'),
+    '#type'          => 'select',
+    '#title'         => t('Currency symbol position'),
     '#default_value' => $settings['currency_symbol'],
-    '#options' => array(
-      'none' => t('- None -'),
+    '#options'       => array(
+      'none'          => t('- None -'),
       'symbol_before' => t('Symbol before number value'),
-      'symbol_after' => t('Symbol after number value'),
-      'iso_before' => t('ISO code before number value'),
-      'iso_after' => t('ISO code after number value'),
+      'symbol_after'  => t('Symbol after number value'),
+      'iso_before'    => t('ISO code before number value'),
+      'iso_after'     => t('ISO code after number value'),
     ),
   );
 
   $element['thousand_separator'] = array(
-    '#type' => 'select',
-    '#title' => t('Thousand marker'),
+    '#type'          => 'select',
+    '#title'         => t('Thousand marker'),
     '#default_value' => $settings['thousand_separator'],
-    '#options' => array(
-      '' => t('<none>'),
+    '#options'       => array(
+      ''  => t('<none>'),
       '.' => t('Decimal point'),
       ',' => t('Comma'),
       ' ' => t('Space'),
@@ -118,20 +118,20 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
   );
 
   $element['decimal_separator'] = array(
-    '#type' => 'select',
-    '#title' => t('Decimal marker'),
+    '#type'          => 'select',
+    '#title'         => t('Decimal marker'),
     '#default_value' => $settings['decimal_separator'],
-    '#options' => array(
+    '#options'       => array(
       '.' => t('Decimal point'),
-      ',' => t('Comma')
+      ',' => t('Comma'),
     ),
   );
 
   $element['scale'] = array(
-    '#type' => 'select',
-    '#title' => t('Scale'),
-    '#description' => t('The number of digits to the right of the decimal.'),
-    '#options' => drupal_map_assoc(range(0, 10)),
+    '#type'          => 'select',
+    '#title'         => t('Scale'),
+    '#description'   => t('The number of digits to the right of the decimal.'),
+    '#options'       => drupal_map_assoc(range(0, 10)),
     '#default_value' => $settings['scale'],
   );
 
@@ -208,8 +208,8 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
   $id = drupal_html_id('fixer-io-container');
   $form['fixer_io_container'] = array(
     '#prefix' => '<div id="' . $id . '">',
-    '#type' => 'container',
-    '#suffix' => '</div>'
+    '#type'   => 'container',
+    '#suffix' => '</div>',
   );
 
   $form['fixer_io_container']['fixer_io_value'] = array(
@@ -219,15 +219,15 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
   );
 
   $form['fixer_io_container']['fixer_io_switcher'] = array(
-    '#prefix' => '<div class="form-item fixer-io-inline fixer-io select">',
-    '#type' => 'select',
-    '#options' => _fixer_io_activated_currencies(),
+    '#prefix'        => '<div class="form-item fixer-io-inline fixer-io select">',
+    '#type'          => 'select',
+    '#options'       => _fixer_io_activated_currencies(),
     '#default_value' => $default_iso_code,
-    '#ajax' => array(
+    '#ajax'          => array(
       'callback' => 'fixer_io_switcher_ajax_callback',
-      'wrapper' => $id,
+      'wrapper'  => $id,
     ),
-    '#suffix' => '</div>',
+    '#suffix'        => '</div>',
   );
 
   return $form;
@@ -318,7 +318,7 @@ function _fixer_io_activated_currencies() {
   $items = drupal_map_assoc(variable_get('fixer_io_options', array(
     'EUR',
     'USD',
-    'GBP'
+    'GBP',
   )));
 
   $items = array_intersect(array_flip($items), $items);

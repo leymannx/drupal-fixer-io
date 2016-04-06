@@ -10,15 +10,15 @@
 function fixer_io_base() {
 
   $form['fixer_io_base'] = array(
-    '#type' => 'select',
-    '#title' => t('Choose a base currency.'),
-    '#description' => t('Being the currency of the base values in the back-end.'),
-    '#options' => _fixer_io_available_currencies(),
+    '#type'          => 'select',
+    '#title'         => t('Choose a base currency.'),
+    '#description'   => t('Being the currency of the base values in the back-end.'),
+    '#options'       => _fixer_io_available_currencies(),
     '#default_value' => variable_get('fixer_io_base', 'EUR'),
   );
 
   $form['submit'] = array(
-    '#type' => 'submit',
+    '#type'  => 'submit',
     '#value' => t('Save configuration'),
   );
 
@@ -42,13 +42,13 @@ function fixer_io_base_submit($form, &$form_state) {
 function fixer_io_options() {
 
   $form['fixer_io_options'] = array(
-    '#type' => 'checkboxes',
-    '#title' => t('Choose switchable currencies.'),
-    '#options' => _fixer_io_available_currencies(),
+    '#type'          => 'checkboxes',
+    '#title'         => t('Choose switchable currencies.'),
+    '#options'       => _fixer_io_available_currencies(),
     '#default_value' => variable_get('fixer_io_options', array(
       'EUR',
       'USD',
-      'GBP'
+      'GBP',
     )),
   );
 
@@ -78,15 +78,15 @@ function fixer_io_default() {
     $default_value = is_array($default_array) ? $default_array[$language->language] : $default_array;
 
     $form['fixer_io_default']['fixer_io_default_' . $language->language] = array(
-      '#type' => 'select',
-      '#description' => count($languages) > 1 ? $language->name : '',
-      '#options' => _fixer_io_activated_currencies(),
+      '#type'          => 'select',
+      '#description'   => count($languages) > 1 ? $language->name : '',
+      '#options'       => _fixer_io_activated_currencies(),
       '#default_value' => $default_value,
     );
   }
 
   $form['submit'] = array(
-    '#type' => 'submit',
+    '#type'  => 'submit',
     '#value' => t('Save configuration'),
   );
 
