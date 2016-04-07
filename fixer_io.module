@@ -47,6 +47,15 @@ function fixer_io_menu() {
     'weight'           => 20,
     'file'             => 'fixer_io.admin.inc',
   );
+  $items['admin/config/regional/fixer_io/switcher'] = array(
+    'title'            => t('Switcher type'),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('fixer_io_switcher_type'),
+    'access arguments' => array('administer site configuration'),
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 30,
+    'file'             => 'fixer_io.admin.inc',
+  );
 
   return $items;
 }
@@ -105,16 +114,6 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
       'symbol_after'  => t('Symbol suffix'),
       'iso_before'    => t('ISO prefix'),
       'iso_after'     => t('ISO suffix'),
-    ),
-  );
-
-  $element['switcher_type'] = array(
-    '#type'          => 'select',
-    '#title'         => t('Currency switcher type'),
-    '#default_value' => $settings['switcher_type'],
-    '#options'       => array(
-      'select' => t('Select list'),
-      'radios' => t('Radio buttons'),
     ),
   );
 
@@ -235,10 +234,12 @@ function fixer_io_switcher($form, &$form_state, $field_value, $settings) {
     '#markup' => _fixer_io_number_format($number, $settings, $form_state),
     '#suffix' => '</span>',
   );
+
+  $display_options = variable_get('fixer_io_options_display', 'iso');
   $form['fixer_io_container']['fixer_io_switcher'] = array(
     '#prefix'        => '<div class="form-item fixer-io-inline fixer-io select">',
-    '#type'          => $settings['switcher_type'],
-    '#options'       => _fixer_io_activated_currencies(),
+    '#type'          => variable_get('fixer_io_switcher', 'select'),
+    '#options'       => ($display_options == 'iso') ? _fixer_io_activated_currencies() : _fixer_io_activated_symbols(),
     '#default_value' => $default_iso_code,
     '#ajax'          => array(
       'callback' => 'fixer_io_switcher_ajax_callback',
@@ -343,6 +344,21 @@ function _fixer_io_activated_currencies() {
 
   $items = array_intersect(array_flip($items), $items);
   return $items;
+}
+
+/**
+ * Helper.
+ */
+function _fixer_io_activated_symbols() {
+
+  $items = _fixer_io_activated_currencies();
+  $symbol_map = array();
+
+  foreach ($items as $key => $value) {
+    $symbol_map[$key] = _fixer_io_symbol($value);
+  }
+
+  return $symbol_map;
 }
 
 /**

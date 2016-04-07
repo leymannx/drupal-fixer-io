@@ -21,4 +21,6 @@ function fixer_io_uninstall() {
   variable_del('fixer_io_base');
   variable_del('fixer_io_default');
   variable_del('fixer_io_options');
+  variable_del('fixer_io_switcher');
+  variable_del('fixer_io_options_display');
 }

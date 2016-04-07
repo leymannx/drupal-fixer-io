@@ -11,7 +11,7 @@ function fixer_io_base() {
 
   $form['fixer_io_base'] = array(
     '#type'          => 'select',
-    '#title'         => t('Choose a global base currency.'),
+    '#title'         => t('Change global base currency.'),
     '#description'   => t('Being the currency the value will be entered in by editors.'),
     '#options'       => _fixer_io_available_currencies(),
     '#default_value' => variable_get('fixer_io_base', 'EUR'),
@@ -43,7 +43,7 @@ function fixer_io_options() {
 
   $form['fixer_io_options'] = array(
     '#type'          => 'checkboxes',
-    '#title'         => t('Choose switchable currencies.'),
+    '#title'         => t('Change switchable currencies.'),
     '#options'       => _fixer_io_available_currencies(),
     '#default_value' => variable_get('fixer_io_options', array(
       'EUR',
@@ -66,7 +66,7 @@ function fixer_io_default() {
   );
   $form['fixer_io_default']['description'] = array(
     '#prefix' => '<label>',
-    '#markup' => t('Choose a default display currency for each available language.'),
+    '#markup' => t('Change default display currency for each available language.'),
     '#suffix' => '</label>',
   );
 
@@ -105,8 +105,39 @@ function fixer_io_default_submit($form, &$form_state) {
       $default_currency[$prefix] = $value;
     }
   }
-  variable_set('fixer_io_default', $default_currency);
 
+  variable_set('fixer_io_default', $default_currency);
+}
+
+/**
+ * @return mixed
+ */
+function fixer_io_switcher_type() {
+
+  $form['fixer_io_switcher'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Change switcher type.'),
+//    '#description'   => t('Choose a switcher type.'),
+    '#default_value' => variable_get('fixer_io_switcher', 'select'),
+    '#options'       => array(
+      'select' => t('Select list'),
+      'radios' => t('Radio buttons'),
+    ),
+  );
+
+  $form['fixer_io_options_display'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Change visible option type.'),
+//    '#description'   => t('Choose visible option type.'),
+    '#default_value' => variable_get('fixer_io_options_display', 'iso'),
+    '#options'       => array(
+      'iso'    => t('ISO code'),
+      'symbol' => t('Currency symbol'),
+    ),
+  );
+
+  return system_settings_form($form);
+//  variable_set('fixer_io_options', $form_state['values']['fixer_io_options']);
 }
 
 /**
