@@ -146,7 +146,7 @@ function fixer_io_field_formatter_settings_summary($field, $instance, $view_mode
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
 
-  $summary = _fixer_io_number_format(1234.1234567890, $settings);
+  $summary = _fixer_io_number_format(1234.1234567890, $settings, $form_state = '');
 
   return $summary;
 }
@@ -165,8 +165,8 @@ function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance,
 
       foreach ($items as $delta => $item) {
 
-        $value = $item['value'];
-        $form = drupal_get_form('fixer_io_switcher', $value, $settings);
+        $field_value = $item['value'];
+        $form = drupal_get_form('fixer_io_switcher', $field_value, $settings);
 
         $element[$delta] = array(
           '#markup' => render($form),
@@ -183,31 +183,37 @@ function fixer_io_field_formatter_view($entity_type, $entity, $field, $instance,
  *
  *   Returns the actual switcher form.
  */
-function fixer_io_switcher($form, &$form_state, $value, $settings) {
+function fixer_io_switcher($form, &$form_state, $field_value, $settings) {
 
   global $language;
-
   $fixer_io_default = variable_get('fixer_io_default', 'EUR');
+
+  // Get default currency by language.
   $default_iso_code = is_array($fixer_io_default) ? $fixer_io_default[$language->language] : $fixer_io_default;
   $base_iso_code = variable_get('fixer_io_base', 'EUR');
 
-  $default_value = $value;
+  // Get default value by language.
+  $default_value = $field_value;
   if ($default_iso_code != $base_iso_code) {
     $default_value = _fixer_io_calculate($default_value, $default_iso_code);
   }
+
+  $number = $default_value;
+
+  // Re-calculate on form change.
   if (!empty($form_state['values']['fixer_io_switcher'])) {
-    $number = _fixer_io_calculate($default_value, $form_state['values']['fixer_io_switcher']);
+    $number = _fixer_io_calculate($field_value, $form_state['values']['fixer_io_switcher']);
     if ($form_state['values']['fixer_io_switcher'] == $base_iso_code) {
-      $number = $value;
+      $number = $field_value;
+    }
+    if ($form_state['values']['fixer_io_switcher'] == $default_iso_code) {
+      $number = $default_value;
     }
   }
-  else {
-    $number = $default_value;
-  }
 
-  $id = drupal_html_id('fixer-io-container');
+  $unique_id = drupal_html_id('fixer-io-container');
   $form['fixer_io_container'] = array(
-    '#prefix' => '<div id="' . $id . '">',
+    '#prefix' => '<div id="' . $unique_id . '">',
     '#type'   => 'container',
     '#suffix' => '</div>',
   );
@@ -224,7 +230,7 @@ function fixer_io_switcher($form, &$form_state, $value, $settings) {
     '#default_value' => $default_iso_code,
     '#ajax'          => array(
       'callback' => 'fixer_io_switcher_ajax_callback',
-      'wrapper'  => $id,
+      'wrapper'  => $unique_id,
     ),
     '#suffix'        => '</div>',
   );
