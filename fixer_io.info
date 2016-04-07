@@ -1,4 +1,4 @@
-name = fixer.io Currency Switcher
+name = Fixer.io Currency Switcher
 description = A description of what your module does.
 core = 7.x
 stylesheets[all][] = css/fixer_io.css
