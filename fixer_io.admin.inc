@@ -11,8 +11,8 @@ function fixer_io_base() {
 
   $form['fixer_io_base'] = array(
     '#type'          => 'select',
-    '#title'         => t('Choose a base currency.'),
-    '#description'   => t('Being the currency of the base values in the back-end.'),
+    '#title'         => t('Choose a global base currency.'),
+    '#description'   => t('Being the currency the value will be entered in by editors.'),
     '#options'       => _fixer_io_available_currencies(),
     '#default_value' => variable_get('fixer_io_base', 'EUR'),
   );
