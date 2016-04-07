@@ -12,6 +12,8 @@
  */
 function fixer_io_menu() {
 
+  $items = array();
+
   $items['admin/config/regional/fixer_io'] = array(
     'title'            => t('Fixer.io Currency Switcher'),
     'description'      => t('Configure extended options for fixer.io.'),
@@ -73,6 +75,7 @@ function fixer_io_field_formatter_info() {
       'field types' => array('number_decimal'),
       'settings'    => array(
         'currency_symbol'    => 'symbol_before',
+        'switcher_type'      => 'select',
         'thousand_separator' => '',
         'decimal_separator'  => '.',
         'scale'              => 2,
@@ -98,10 +101,20 @@ function fixer_io_field_formatter_settings_form($field, $instance, $view_mode, $
     '#default_value' => $settings['currency_symbol'],
     '#options'       => array(
       'none'          => t('- None -'),
-      'symbol_before' => t('Symbol before number value'),
-      'symbol_after'  => t('Symbol after number value'),
-      'iso_before'    => t('ISO code before number value'),
-      'iso_after'     => t('ISO code after number value'),
+      'symbol_before' => t('Symbol prefix'),
+      'symbol_after'  => t('Symbol suffix'),
+      'iso_before'    => t('ISO prefix'),
+      'iso_after'     => t('ISO suffix'),
+    ),
+  );
+
+  $element['switcher_type'] = array(
+    '#type'          => 'select',
+    '#title'         => t('Currency switcher type'),
+    '#default_value' => $settings['switcher_type'],
+    '#options'       => array(
+      'select' => t('Select list'),
+      'radios' => t('Radio buttons'),
     ),
   );
 
@@ -145,7 +158,6 @@ function fixer_io_field_formatter_settings_summary($field, $instance, $view_mode
 
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-
   $summary = _fixer_io_number_format(1234.1234567890, $settings, $form_state = '');
 
   return $summary;
@@ -225,7 +237,7 @@ function fixer_io_switcher($form, &$form_state, $field_value, $settings) {
   );
   $form['fixer_io_container']['fixer_io_switcher'] = array(
     '#prefix'        => '<div class="form-item fixer-io-inline fixer-io select">',
-    '#type'          => 'select',
+    '#type'          => $settings['switcher_type'],
     '#options'       => _fixer_io_activated_currencies(),
     '#default_value' => $default_iso_code,
     '#ajax'          => array(
